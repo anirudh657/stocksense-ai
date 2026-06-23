@@ -1,0 +1,11 @@
+# Python virtual environment
+stocksense_env/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# OS generated files
+.DS_Store
