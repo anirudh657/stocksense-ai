@@ -60,6 +60,17 @@ def apply_styles():
         .fund-box { background: #1b1b1b; border: 1px solid #262626; padding: 12px; margin-bottom: 10px; }
         .fund-label { color: #8e8e8e; font-size: 11px; margin-bottom: 4px; }
         .fund-value { color: #e5e7eb; font-size: 14px; font-weight: 600; }
+        
+        /* NEW: Custom branding logo styling */
+        .brand-logo {
+            background: linear-gradient(to right, #f97316, #fcd34d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
         </style>
         """,
         unsafe_allow_html=True

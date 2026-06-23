@@ -5,7 +5,7 @@ from plotly.subplots import make_subplots
 
 # Import from our modularized files
 from styles import apply_styles
-from market_data import get_market_data, get_index_data, safe_get_history, get_stock_info
+from market_data import get_market_data, get_index_data, safe_get_history, get_stock_info, get_stock_news, get_correlation_matrix
 from portfolio import get_portfolio_data, calculate_diversification_score
 from technicals import compute_technicals
 from components import format_money, format_large_number, render_top_bar
@@ -133,7 +133,7 @@ with right:
         unsafe_allow_html=True
     )
 
-    # --- ACTION BUTTONS ---
+    # --- ACTION BUTTONS & ANALYTICS TOGGLE ---
     h_title, h_search, h_analytics, h_download = st.columns([5, 1.5, 1.5, 1.5], gap="small")
     
     with h_title:
@@ -143,7 +143,7 @@ with right:
             st.toast("Search feature coming soon!")
     with h_analytics:
         if st.button("📊 Analytics", use_container_width=True):
-            st.toast("Opening advanced analytics...")
+            st.session_state.show_analytics = not st.session_state.get("show_analytics", False)
     with h_download:
         csv_data = holdings_df.to_csv(index=False).encode('utf-8')
         st.download_button(
@@ -153,6 +153,16 @@ with right:
             mime="text/csv",
             use_container_width=True
         )
+
+    # Show Correlation Matrix if Analytics is toggled ON
+    if st.session_state.get("show_analytics", False):
+        st.markdown('<div class="holdings-title" style="margin-top: 15px; font-size: 16px;">Portfolio Correlation Matrix (3M)</div>', unsafe_allow_html=True)
+        portfolio_tickers = [stock["Stock"] + ".NS" for stock in portfolio_data["stocks"]]
+        corr_fig = get_correlation_matrix(portfolio_tickers)
+        if corr_fig:
+            st.plotly_chart(corr_fig, use_container_width=True)
+        else:
+            st.info("Add more instruments to compute historical asset correlations.")
 
     # --- SUMMARY GRID ---
     pnl_class = "pos" if total_pnl >= 0 else "neg"
@@ -255,7 +265,8 @@ with right:
         tech_df, technical_summary = compute_technicals(chart_data)
         stock_info = get_stock_info(selected_stock)
 
-        tab1, tab2, tab3 = st.tabs(["Fundamental", "Chart", "Technicals"])
+        # Tabs updated to include "News"
+        tab1, tab2, tab3, tab4 = st.tabs(["Fundamental", "Chart", "Technicals", "News"])
 
         with tab1:
             f1, f2, f3, f4 = st.columns(4)
@@ -303,3 +314,25 @@ with right:
 
             tech_line.update_layout(height=320, margin=dict(l=10, r=10, t=20, b=10), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#d1d5db"))
             st.plotly_chart(tech_line, use_container_width=True)
+
+        with tab4:
+            st.markdown('<div class="fund-label" style="margin-bottom:12px; font-weight:600;">Ticker Live Coverage</div>', unsafe_allow_html=True)
+            news_items = get_stock_news(selected_stock)
+            
+            if not news_items:
+                st.info("No active media tracking found for this asset class.")
+            else:
+                for item in news_items:
+                    st.markdown(
+                        f"""
+                        <div style="padding: 12px 0; border-bottom: 1px solid #222222;">
+                            <a href="{item['link']}" target="_blank" style="color: #60a5fa; text-decoration: none; font-size: 13.5px; font-weight: 500; line-height:1.4;">
+                                {item['title']}
+                            </a>
+                            <div style="color: #71717a; font-size: 11px; margin-top: 5px;">
+                                Publisher: <span style="color: #a1a1aa;">{item['publisher']}</span>
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )

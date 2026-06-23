@@ -53,7 +53,7 @@ def render_top_bar(nifty_data, sensex_data):
                     <div class="nav-item">Funds</div>
                 </div>
                 <div class="top-right">
-                    <div class="nav-item">STOCKSENSE</div>
+                    <div class="brand-logo">STOCKSENSE AI</div>
                 </div>
             </div>
         </div>

@@ -1,5 +1,7 @@
 import pandas as pd
 import yfinance as yf
+import plotly.graph_objects as go
+import streamlit as st
 
 def safe_get_history(symbol, period="6mo", interval="1d"):
     try:
@@ -119,3 +121,60 @@ def get_stock_info(symbol):
             "beta": "N/A", "fifty_two_week_high": "N/A",
             "fifty_two_week_low": "N/A", "book_value": "N/A", "eps": "N/A"
         }
+
+def get_stock_news(symbol, limit=4):
+    """Fetches compact market news for a specific stock."""
+    try:
+        ticker = yf.Ticker(symbol)
+        news = ticker.news
+        if not news:
+            return []
+        
+        formatted_news = []
+        for n in news[:limit]:
+            formatted_news.append({
+                "title": n.get("title", "No Title"),
+                "publisher": n.get("publisher", "Unknown"),
+                "link": n.get("link", "#")
+            })
+        return formatted_news
+    except Exception:
+        return []
+
+@st.cache_data(ttl=3600)
+def get_correlation_matrix(tickers):
+    """Generates a Plotly heatmap of stock correlations based on 3 months of data."""
+    if not tickers or len(tickers) < 2:
+        return None
+    try:
+        # Download 3 months of daily close price data
+        df = yf.download(tickers, period="3mo", interval="1d", progress=False)["Close"]
+        
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+            
+        corr = df.corr().round(2)
+        
+        # Create an interactive heatmap
+        fig = go.Figure(data=go.Heatmap(
+            z=corr.values,
+            x=corr.columns,
+            y=corr.index,
+            colorscale='RdBu',
+            zmin=-1, zmax=1,
+            text=corr.values,
+            texttemplate="%{text}",
+            showscale=False,
+            hoverinfo="x+y+z"
+        ))
+        
+        fig.update_layout(
+            height=350,
+            margin=dict(l=20, r=20, t=20, b=20),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#d1d5db", size=10)
+        )
+        return fig
+    except Exception:
+        return None
